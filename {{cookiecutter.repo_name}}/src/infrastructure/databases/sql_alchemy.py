@@ -1,30 +1,19 @@
-from flask_sqlalchemy import SQLAlchemy
-
+from databases import Database
 from src.domain import SQLALCHEMY_DATABASE_URI, OperationalException
 
-sqlalchemy_db = SQLAlchemy()
+database = Database(SQLALCHEMY_DATABASE_URI)
 
+def setup_database(app):
+    @app.on_event("startup")
+    async def startup():
+        try:
+            await database.connect()
+        except Exception as e:
+            raise OperationalException(f"Could not connect to database: {e}")
 
-class SQLAlchemyAdapter:
-
-    def __init__(self, app):
-
-        if app.config[SQLALCHEMY_DATABASE_URI] is not None:
-            sqlalchemy_db.init_app(app)
-        elif not app.config["TESTING"]:
-            raise OperationalException(
-                "SQLALCHEMY_DATABASE_URI not set in config, please make sure" +
-                "SQLALCHEMY_DATABASE_URI is set in the config file or in the" +
-                "environment variables"
-            )
-
-
-def setup_sqlalchemy(app, throw_exception_if_not_set=True):
-
-    try:
-        SQLAlchemyAdapter(app)
-    except OperationalException as e:
-        if throw_exception_if_not_set:
-            raise e
-
-    return app
+    @app.on_event("shutdown")
+    async def shutdown():
+        try:
+            await database.disconnect()
+        except Exception as e:
+            raise OperationalException(f"Could not disconnect from database: {e}")
