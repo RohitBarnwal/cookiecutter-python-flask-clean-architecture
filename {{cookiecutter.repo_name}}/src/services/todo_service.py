@@ -4,10 +4,10 @@ from .repository_service import RepositoryService
 
 class TodoService(RepositoryService):
 
-    def create(self, data):
+    async def create(self, data):
         data["created_at"] = datetime.now(tz=timezone.utc)
-        return self.repository.create(data)
+        return await self.repository.create(data)
 
-    def update(self, object_id, data):
+    async def update(self, object_id, data):
         data["updated_at"] = datetime.now(tz=timezone.utc)
-        return self.repository.update(object_id, data)
+        return await self.repository.update(object_id, data)
